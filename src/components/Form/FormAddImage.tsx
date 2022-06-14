@@ -1,5 +1,5 @@
 import { Box, Button, Stack, useToast } from '@chakra-ui/react';
-import { useForm } from 'react-hook-form';
+import { SubmitHandler, useForm } from 'react-hook-form';
 import { useState } from 'react';
 import { useMutation, useQueryClient } from 'react-query';
 
@@ -11,50 +11,85 @@ interface FormAddImageProps {
   closeModal: () => void;
 }
 
+type dataImage = {
+  title: string;
+  description: string;
+  url: string;
+};
+
 export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
   const [imageUrl, setImageUrl] = useState('');
   const [localImageUrl, setLocalImageUrl] = useState('');
+
   const toast = useToast();
 
   const formValidations = {
     image: {
       // TODO REQUIRED, LESS THAN 10 MB AND ACCEPTED FORMATS VALIDATIONS
+      required: true,
+      maxLength: 10,
     },
     title: {
       // TODO REQUIRED, MIN AND MAX LENGTH VALIDATIONS
+      required: true,
+      minLength: 3,
+      maxLength: 50,
     },
     description: {
       // TODO REQUIRED, MAX LENGTH VALIDATIONS
+      required: true,
+      maxLength: 500,
     },
   };
 
   const queryClient = useQueryClient();
   const mutation = useMutation(
+    async (data: dataImage) => {
+      const response = await api.post('/api/images', data);
+      return response.data;
+    },
     // TODO MUTATION API POST REQUEST,
     {
       // TODO ONSUCCESS MUTATION
+      onSuccess: () => {
+        toast({
+          title: 'Image added successfully',
+          status: 'success',
+          duration: 9000,
+        });
+        closeModal();
+      },
     }
   );
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState,
-    setError,
-    trigger,
-  } = useForm();
+  const { register, handleSubmit, reset, formState, setError, trigger } =
+    useForm();
   const { errors } = formState;
 
   const onSubmit = async (data: Record<string, unknown>): Promise<void> => {
+    const dataFake = {
+      url: 'https://s1.static.brasilescola.uol.com.br/be/conteudo/images/imagem-em-lente-convexa.jpg',
+      title: 'titulo teste',
+      description: 'descrição teste',
+    };
+
     try {
       // TODO SHOW ERROR TOAST IF IMAGE URL DOES NOT EXISTS
+
       // TODO EXECUTE ASYNC MUTATION
+      await mutation.mutateAsync(dataFake);
       // TODO SHOW SUCCESS TOAST
     } catch {
-      // TODO SHOW ERROR TOAST IF SUBMIT FAILED
+      toast({
+        // TODO SHOW ERROR TOAST IF SUBMIT FAILED
+        title: 'Erro ao adicionar imagem!',
+        status: 'error',
+        duration: 9000,
+      });
     } finally {
       // TODO CLEAN FORM, STATES AND CLOSE MODAL
+      reset();
+      closeModal();
     }
   };
 
@@ -67,21 +102,10 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
           setLocalImageUrl={setLocalImageUrl}
           setError={setError}
           trigger={trigger}
-          // TODO SEND IMAGE ERRORS
-          // TODO REGISTER IMAGE INPUT WITH VALIDATIONS
+          name="image"
         />
-
-        <TextInput
-          placeholder="Título da imagem..."
-          // TODO SEND TITLE ERRORS
-          // TODO REGISTER TITLE INPUT WITH VALIDATIONS
-        />
-
-        <TextInput
-          placeholder="Descrição da imagem..."
-          // TODO SEND DESCRIPTION ERRORS
-          // TODO REGISTER DESCRIPTION INPUT WITH VALIDATIONS
-        />
+        <TextInput placeholder="Título da imagem..." name="title" />
+        <TextInput placeholder="Descrição da imagem..." name="description" />
       </Stack>
 
       <Button

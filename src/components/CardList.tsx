@@ -16,31 +16,25 @@ interface CardsProps {
 }
 
 export function CardList({ cards }: CardsProps): JSX.Element {
-  const [isOpen, setIsOpen] = useState(false);
   const [selectedImageModal, setSelectedImageModal] = useState({
     url: '',
     title: '',
     description: '',
   });
 
-  // TODO MODAL USEDISCLOSURE
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
-  // TODO SELECTED IMAGE URL STATE
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  function selectedImage(id) {
-    setIsOpen(true);
+  function selectedImage(id: string): void {
+    onOpen();
 
     const imageSelected = cards.find(card => card.id === id);
 
     setSelectedImageModal(imageSelected);
   }
 
-  // TODO FUNCTION HANDLE VIEW IMAGE
-
   return (
     <>
-      {/* TODO CARD GRID */}
-      <SimpleGrid columns={[1, 1, 2, 3]} spacing={8}>
+      <SimpleGrid columns={[1, 2, 3]} spacing="40px">
         {cards.map(card => (
           <div key={card.id}>
             <Card data={card} viewImage={() => selectedImage(card.id)} />
@@ -48,11 +42,10 @@ export function CardList({ cards }: CardsProps): JSX.Element {
         ))}
       </SimpleGrid>
 
-      {/* TODO MODALVIEWIMAGE */}
       <ModalViewImage
         imgUrl={selectedImageModal.url}
         isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
+        onClose={() => onClose()}
       />
     </>
   );

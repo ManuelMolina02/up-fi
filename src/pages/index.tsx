@@ -27,16 +27,20 @@ export default function Home(): JSX.Element {
     isFetchingNextPage,
     fetchNextPage,
     hasNextPage,
-  } = useInfiniteQuery(
-    'images',
-    getData,
-    {
-      getNextPageParam: response => {
-        return response || null;
-      },
-    }
-    // TODO GET AND RETURN NEXT PAGE PARAM
-  );
+  } = useInfiniteQuery('images', getData, {
+    getNextPageParam: response => {
+      return response || null;
+    },
+  });
+
+  console.log('hasNextPage: ', hasNextPage);
+  console.log('isFetchingNextPage: ', isFetchingNextPage);
+
+  function lastPage(): void {
+    fetchNextPage({
+      pageParam: '334399589890130512',
+    });
+  }
 
   const formattedData = useMemo(() => {
     let resultData: any = [];
@@ -72,6 +76,16 @@ export default function Home(): JSX.Element {
 
       <Box maxW={1120} px={20} mx="auto" my={20}>
         <CardList cards={formattedData} />
+        {hasNextPage && (
+          <Button
+            mt="8"
+            onClick={() => {
+              lastPage();
+            }}
+          >
+            Load more
+          </Button>
+        )}
       </Box>
     </>
   );
