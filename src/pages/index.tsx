@@ -1,4 +1,4 @@
-import { Button, Box, Text } from '@chakra-ui/react';
+import { Button, Box, Spinner } from '@chakra-ui/react';
 import { useMemo } from 'react';
 import { useInfiniteQuery } from 'react-query';
 
@@ -8,17 +8,28 @@ import { api } from '../services/api';
 import { Loading } from '../components/Loading';
 import { Error } from '../components/Error';
 
-interface getDataProps {
-  pages: any;
-  pageParams: any;
+type Image = {
+  id: string;
+  title: string;
+  description: string;
+  url: string;
+  ts: number;
+};
+
+interface GetDataProps {
+  data: Image[];
+  after: string;
 }
 
 export default function Home(): JSX.Element {
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  const getData = ({ pageParam = 0 }) => {
-    const response = api.get(`/api/images?after=${pageParam}`);
-    return response;
-  };
+  async function getData({ pageParam = 0 }): Promise<GetDataProps> {
+    const { data } = await api('/api/images', {
+      params: {
+        after: pageParam,
+      },
+    });
+    return data;
+  }
 
   const {
     data,
@@ -28,44 +39,21 @@ export default function Home(): JSX.Element {
     fetchNextPage,
     hasNextPage,
   } = useInfiniteQuery('images', getData, {
-    getNextPageParam: response => {
-      return response || null;
-    },
+    getNextPageParam: lastPage => lastPage?.after || null,
   });
 
-  console.log('hasNextPage: ', hasNextPage);
-  console.log('isFetchingNextPage: ', isFetchingNextPage);
-
-  function lastPage(): void {
-    fetchNextPage({
-      pageParam: '334399589890130512',
-    });
-  }
-
   const formattedData = useMemo(() => {
-    let resultData: any = [];
+    const formatted = data?.pages.flatMap(image => {
+      return image.data.flat();
+    });
 
-    if (data) {
-      resultData = data.pages;
-
-      if (resultData.length > 0) {
-        resultData = resultData.map(page => {
-          return page.data.data;
-        });
-      }
-
-      resultData = resultData.flat();
-    }
-
-    return resultData;
+    return formatted;
   }, [data]);
 
-  // TODO RENDER LOADING SCREEN
   if (isLoading) {
     return <Loading />;
   }
 
-  // TODO RENDER ERROR SCREEN
   if (isError) {
     return <Error />;
   }
@@ -80,10 +68,18 @@ export default function Home(): JSX.Element {
           <Button
             mt="8"
             onClick={() => {
-              lastPage();
+              fetchNextPage();
             }}
+            disabled={isFetchingNextPage}
           >
-            Load more
+            {isFetchingNextPage ? (
+              <>
+                <Spinner mr="4" />
+                Carregando...
+              </>
+            ) : (
+              'Carregar mais'
+            )}
           </Button>
         )}
       </Box>
